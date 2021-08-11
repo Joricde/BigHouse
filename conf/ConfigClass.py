@@ -19,16 +19,11 @@ class Singleton(object):
         return self._instance[self._cls]
 
 
-def find_config_path() -> str:
-    pwd = os.getcwd()
-    default_path = os.path.dirname(__file__)
-    if pwd != default_path:
-        if len(pwd) > len(os.path.dirname(default_path)):
-            pwd = os.path.join(os.path.dirname(pwd), 'config')
-            default_path = pwd
-    default_path = os.path.join(default_path, "config.json")
+def get_config_path() -> str:
+    path = os.path.dirname(__file__)
+    path = os.path.join(path, "config.json")
 
-    return default_path
+    return path
 
 
 @Singleton
@@ -51,7 +46,7 @@ class CustomBinanceData(binance):
 
     def __init__(self):
         try:
-            with open(find_config_path()) as config_read:
+            with open(get_config_path()) as config_read:
                 class_config_read = json.load(config_read)
                 if class_config_read['class_config']['enableRateLimit'] == 'True':
                     class_config_read['class_config']['enableRateLimit'] = True
@@ -150,7 +145,7 @@ class CustomMysql(connect):
 
     def __init__(self):
         try:
-            with open(find_config_path()) as config_read:
+            with open(get_config_path()) as config_read:
                 mysql_config = json.load(config_read)
                 super(CustomMysql, self).__init__(
                     host=mysql_config["mysql"]["host"],
