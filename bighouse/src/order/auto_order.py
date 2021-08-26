@@ -45,7 +45,7 @@ class TransactionCurrency(object):
             self.__exchange = conf.ConfigClass.CustomBinanceData()
             self.__symbol = symbol
             loop.run_until_complete(loop.create_task(self.fetch_balance()))
-            loop.run_until_complete(loop.create_task(self.GetTickerPrice()))
+            loop.run_until_complete(loop.create_task(self.get_ticker_price()))
         except SystemExit:
             logger.error(SystemExit)
             raise SystemExit
@@ -77,7 +77,7 @@ class TransactionCurrency(object):
                     f"{self.principal_coin_name}: {self.wallet_free_principal}", "finish")
         return response
 
-    async def GetTickerPrice(self, ) -> float:
+    async def get_ticker_price(self, ) -> float:
         """
         refresh self price_now
         :return:a float price
@@ -137,7 +137,7 @@ class TransactionCurrency(object):
                                                      f'status : {self.order_status}')
         return response
 
-    async def cancelOrder(self):
+    async def cancel_order(self):
         try:
             response = self.__exchange.cancel_order(self.orderId, self.__symbol)
         except TypeError as e:
@@ -156,7 +156,7 @@ class TransactionCurrency(object):
         loop = asyncio.get_event_loop()
         while True:
             time.sleep(60)
-            price_query = loop.create_task(self.GetTickerPrice())
+            price_query = loop.create_task(self.get_ticker_price())
             loop.run_until_complete(price_query)
             self.price_now = price_query.result()
 

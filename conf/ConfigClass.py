@@ -48,12 +48,12 @@ class CustomBinanceData(binance):
         try:
             with open(get_config_path()) as config_read:
                 class_config_read = json.load(config_read)
-                if class_config_read['class_config']['enableRateLimit'] == 'True':
-                    class_config_read['class_config']['enableRateLimit'] = True
+                if class_config_read['classConfig']['enableRateLimit'] == 'True':
+                    class_config_read['classConfig']['enableRateLimit'] = True
                 else:
-                    class_config_read['class_config']['enableRateLimit'] = False
+                    class_config_read['classConfig']['enableRateLimit'] = False
                 config_read.close()
-            super(CustomBinanceData, self).__init__(class_config_read['class_config'])
+            super(CustomBinanceData, self).__init__(class_config_read['classConfig'])
         except Exception:
             raise Exception
 

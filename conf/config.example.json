@@ -6,7 +6,7 @@
     "database": "database",
     "charset": "utf8"
   },
-  "class_config": {
+  "classConfig": {
     "apiKey": "apikey",
     "secret": "secret",
     "proxies": {
