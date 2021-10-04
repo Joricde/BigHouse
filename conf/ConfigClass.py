@@ -3,20 +3,10 @@
 """
 import json
 import os
+import threading
 
 from ccxt import binance
 from pymysql import connect
-
-
-class Singleton(object):
-    def __init__(self, cls):
-        self._cls = cls
-        self._instance = {}
-
-    def __call__(self):
-        if self._cls not in self._instance:
-            self._instance[self._cls] = self._cls()
-        return self._instance[self._cls]
 
 
 def get_config_path() -> str:
@@ -26,7 +16,6 @@ def get_config_path() -> str:
     return path
 
 
-@Singleton
 class CustomBinanceData(binance):
     """
     默认采用此子类代替直接使用ccxt的binance类
@@ -43,6 +32,15 @@ class CustomBinanceData(binance):
         该币单位价格unit price
     *:params: 自定义内容，根据具体交易所的接口编写
     """
+
+    _instance_lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(CustomBinanceData, "_instance"):
+            with CustomBinanceData._instance_lock:
+                if not hasattr(CustomBinanceData, "_instance"):
+                    CustomBinanceData._instance = object.__new__(cls)
+        return CustomBinanceData._instance
 
     def __init__(self):
         try:
@@ -104,7 +102,7 @@ class CustomBinanceData(binance):
             'symbol.txt': symbol.txt,
             'type': type,
             'timeInForce': timeInForce,
-            'postOnly': postOnly,
+            'postOnly': postOnly,q
             'side': side,
             'price': price,
             'stopPrice': stopPrice,
@@ -140,7 +138,6 @@ class CustomBinanceData(binance):
         pass
 
 
-@Singleton
 class CustomMysql(connect):
 
     def __init__(self):
