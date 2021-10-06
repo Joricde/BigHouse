@@ -69,7 +69,7 @@ def getExchangeData():
         except Exception as e:
             logger.error(e)
             db_test.rollback()
-        time.sleep(10)
+        time.sleep(30)
 
 
 def compress():
@@ -97,7 +97,7 @@ def compress():
                     logger.debug(os.path.join(root, f))
                     os.remove(os.path.join(root, f))
             # compress_part = path_b if work_path == path_a else path_a
-        time.sleep(10)
+        time.sleep(360)
 
 
 def start():
