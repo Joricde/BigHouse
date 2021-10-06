@@ -1,4 +1,3 @@
-# rich
 ### 
 ```bat  
 pip install ccxt
