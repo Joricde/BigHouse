@@ -10,7 +10,7 @@ import logging
 _error_log_file = os.path.expanduser('~/.bighouse/error.log')
 _critical_log_file = os.path.expanduser('~/.bighouse/critical.log')
 
-formatter = logging.Formatter('[%(asctime)s %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s %(filename)s %(levelname)s: %(message)s')
 logger = logging.getLogger('bighouse')
 default_handler = logging.StreamHandler(sys.stdout)
 default_handler.setFormatter(formatter)

@@ -1,66 +1,108 @@
 import io
 import os
+import random
+import threading
 import time
-import sys
-from bighouse import logger
+import zipfile
+from bighouse import logger, res
 from conf import ConfigClass
 
-sys.path.append('..\..\BigHouse')
+# path_a = '..\\logs\\part_a\\'
+path_a = res.get_path(res.LOGS, 'part_a')
+# path_b = '..\\logs\\part_b\\'
+path_b = res.get_path(res.LOGS, 'part_b')
 
-exchange = ConfigClass.CustomBinanceData()
-
-db_test = ConfigClass.CustomMysql()
-cursor = db_test.cursor()
-# print(exchange.custom_fetch_balance())
-
-i = 1
-timestamp = 0
-price = 0
+work_path = path_a
 list_coin = ['BTC/BUSD', 'DOGE/BUSD', 'ETH/BUSD', 'ADA/BUSD']
-default_path = os.path.dirname(os.path.dirname(__file__))  # default path is main entrance path
-logger.info(default_path)
 
-now_time = time.strftime("%Y-%m-%d", time.localtime())
-coin_root_path = '../logs/'
 
-for res in list_coin:
-    coin_name = str(res).split('/')
-    coin_name = coin_name[0] + coin_name[1]
-    sql_sentence = f"""
-        create table if not exists {coin_name}(
-            time_stamp timestamp,
-            price float
-        )
-    """
-    cursor.execute(sql_sentence)
-    coin_dirs = coin_root_path + coin_name
-    if not os.path.exists(coin_dirs):
-        os.makedirs(coin_dirs)
+def getExchangeData():
+    global work_path, path_a, path_b, list_coin
+    exchange = ConfigClass.CustomBinanceData()
+    db_test = ConfigClass.CustomMysql()
+    cursor = db_test.cursor()
+    timestamp = 0
+    price = 0
+    default_path = os.path.dirname(os.path.dirname(__file__))  # default path is main entrance path
+    logger.info('default_path'+default_path)
 
-while True:
-    try:
-        for res in list_coin:
-            coin_name = str(res).split('/')
-            coin_name = coin_name[0] + coin_name[1]
-            file_path = f'{coin_root_path}{coin_name}/{now_time}{coin_name}.log'
-            with open(file_path, "a+", buffering=io.DEFAULT_BUFFER_SIZE) as coin_data:
-                response = exchange.fetch_ticker(res)
-                coin_data.write(str(response))
-                coin_data.write('\n')
-                timestamp = response["timestamp"]
-                now_time = time.strftime("%Y-%m-%d", time.localtime(int(timestamp / 1000)))
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(timestamp / 1000)))
-                price = response["bid"]
-                query = f"""
-                    insert into {coin_name}(time_stamp, price) values (%s, %s)
-                """
-                values = (timestamp, price)
-                cursor.execute(query, values)
-                coin_data.close()
-        db_test.commit()
+    now_time = time.strftime("%Y-%m-%d", time.localtime())
 
-    except Exception as e:
-        logger.error(e)
-        db_test.rollback()
-    logger.info(price)
-    time.sleep(10)
+    for coin in list_coin:
+        coin_name = str(coin).split('/')
+        coin_name = coin_name[0] + coin_name[1]
+        sql_sentence = f"""
+            create table if not exists {coin_name}(
+                time_stamp timestamp,
+                price float
+            )
+        """
+        cursor.execute(sql_sentence)
+        if not os.path.exists(os.path.join(path_a, coin_name)):
+            os.makedirs(os.path.join(path_a, coin_name))
+        if not os.path.exists(os.path.join(path_b, coin_name)):
+            os.makedirs(os.path.join(path_b, coin_name))
+
+    while True:
+        try:
+            for coin in list_coin:
+                coin_name = str(coin).split('/')
+                coin_name = coin_name[0] + coin_name[1]
+                file_path = os.path.join(work_path, coin_name, now_time + coin_name + '.log')
+                # file_path = f'{work_path}{coin_name}/{now_time}{coin_name}.log'
+                with open(file_path, "a+", buffering=io.DEFAULT_BUFFER_SIZE) as coin_data:
+                    response = exchange.fetch_ticker(coin)
+                    coin_data.write(str(response))
+                    coin_data.write('\n')
+                    timestamp = response["timestamp"]
+                    now_time = time.strftime("%Y-%m-%d", time.localtime(int(timestamp / 1000)))
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(timestamp / 1000)))
+                    price = response["bid"]
+                    query = f"""
+                        insert into {coin_name}(time_stamp, price) values (%s, %s)
+                    """
+                    values = (timestamp, price)
+                    cursor.execute(query, values)
+                    coin_data.close()
+            db_test.commit()
+            logger.debug(price)
+        except Exception as e:
+            logger.error(e)
+            db_test.rollback()
+        time.sleep(10)
+
+
+def compress():
+    global work_path, path_a, path_b
+    comp_cycle = time.localtime().tm_mday
+    logger.info(f'comp_cycle:, {comp_cycle}')
+    while True:
+        # logger.debug(time.localtime().tm_mday % 30 == comp_cycle - 1)
+        # if time.localtime().tm_mday % 30 == comp_cycle:  # debug
+        if time.localtime().tm_mday % 30 == comp_cycle - 1:
+            compress_part = work_path
+            work_path = path_b if work_path == path_a else path_a
+            t = time.strftime("%Y-%m-%d", time.localtime())
+            with zipfile.ZipFile(f'{res.get_path(res.LOGS)}\\{t}{random.randint(1, 1000)}.zip', 'w',
+                                 compression=zipfile.ZIP_DEFLATED,
+                                 compresslevel=9) as target:
+                for root, dirs, files in os.walk(compress_part):
+                    logger.debug('root'+root)
+                    for f in files:
+                        logger.debug(os.path.join(root, f))
+                        target.write(os.path.join(root, f))
+                target.close()
+            for root, dirs, files in os.walk(compress_part):
+                for f in files:
+                    logger.debug(os.path.join(root, f))
+                    os.remove(os.path.join(root, f))
+            # compress_part = path_b if work_path == path_a else path_a
+        time.sleep(10)
+
+
+def start():
+    thread_1 = threading.Thread(target=getExchangeData)
+    thread_2 = threading.Thread(target=compress)
+    thread_1.start()
+    thread_2.start()
+    thread_1.join()
