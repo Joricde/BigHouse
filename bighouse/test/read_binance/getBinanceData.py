@@ -75,16 +75,18 @@ def getExchangeData():
 def compress():
     global work_path, path_a, path_b
     comp_cycle = time.localtime().tm_mday
+    comp_month = time.localtime().tm_mon % 12 + 1
     logger.info(f'comp_cycle:, {comp_cycle}')
     while True:
         # logger.debug(time.localtime().tm_mday % 30 == comp_cycle - 1)
         # if time.localtime().tm_mday % 30 == comp_cycle:  # debug
-        if time.localtime().tm_mday % 30 == (comp_cycle - 1) % 30:
-            comp_cycle += 1
+        if time.localtime().tm_mday % 30 == comp_cycle and time.localtime().tm_mon == comp_month:
+            logger.info(f'compress month: {comp_month}')
+            comp_month = comp_month % 12 + 1
             compress_part = work_path
             work_path = path_b if work_path == path_a else path_a
             t = time.strftime("%Y-%m-%d", time.localtime())
-            with zipfile.ZipFile(f'{res.get_path(res.LOGS)}{t}{random.randint(1, 1000)}.zip', 'w',
+            with zipfile.ZipFile(f'{res.get_path(res.LOGS)}{t}-{random.randint(1, 1000)}.zip', 'w',
                                  compression=zipfile.ZIP_DEFLATED,
                                  compresslevel=9) as target:
                 for root, dirs, files in os.walk(compress_part):
