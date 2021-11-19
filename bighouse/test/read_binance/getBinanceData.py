@@ -24,7 +24,7 @@ def getExchangeData():
     timestamp = 0
     price = 0
     default_path = os.path.dirname(os.path.dirname(__file__))  # default path is main entrance path
-    logger.info('default_path'+default_path)
+    logger.info('default_path' + default_path)
 
     now_time = time.strftime("%Y-%m-%d", time.localtime())
 
@@ -79,15 +79,16 @@ def compress():
     while True:
         # logger.debug(time.localtime().tm_mday % 30 == comp_cycle - 1)
         # if time.localtime().tm_mday % 30 == comp_cycle:  # debug
-        if time.localtime().tm_mday % 30 == comp_cycle - 1:
+        if time.localtime().tm_mday % 30 == (comp_cycle - 1) % 30:
+            comp_cycle += 1
             compress_part = work_path
             work_path = path_b if work_path == path_a else path_a
             t = time.strftime("%Y-%m-%d", time.localtime())
-            with zipfile.ZipFile(f'{res.get_path(res.LOGS)}\\{t}{random.randint(1, 1000)}.zip', 'w',
+            with zipfile.ZipFile(f'{res.get_path(res.LOGS)}{t}{random.randint(1, 1000)}.zip', 'w',
                                  compression=zipfile.ZIP_DEFLATED,
                                  compresslevel=9) as target:
                 for root, dirs, files in os.walk(compress_part):
-                    logger.debug('root'+root)
+                    logger.debug('root' + root)
                     for f in files:
                         logger.debug(os.path.join(root, f))
                         target.write(os.path.join(root, f))
